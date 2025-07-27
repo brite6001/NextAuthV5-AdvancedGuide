@@ -1,36 +1,28 @@
-// import { useSearchParams } from "next/navigation";
 import { Button } from "../ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 
 export const Social = () => {
-//    const searchParams = useSearchParams();
-//   const callbackUrl = searchParams.get("callbackUrl");
-
-//   const onClick = (provider: "google" | "github") => {
-//     signIn(provider, {
-//       callbackUrl: callbackUrl || DEFAULT_LOGIN_REDIRECT,
-//     });
-//   };
-
   return (
-    <div className="flex items-center w-full gap-x-2">
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xs mx-auto w-full">
       <Button
+        type="button"
         size="lg"
-        className="w-full"
         variant="outline"
-        // onClick={() => onClick("google")}
+        className="flex-1 border-gray-300 hover:bg-gray-100 transition"
       >
         <FcGoogle className="h-5 w-5" />
+        <span className="ml-2">Google</span>
       </Button>
       <Button
+        type="button"
         size="lg"
-        className="w-full"
         variant="outline"
-        // onClick={() => onClick("github")}
+        className="flex-1 border-gray-300 hover:bg-gray-100 transition"
       >
         <FaGithub className="h-5 w-5" />
+        <span className="ml-2">GitHub</span>
       </Button>
     </div>
   );
-}
+};

@@ -8,7 +8,12 @@ export const LoginForm = () => {
       backButtonHref="/auth/register"
       showSocial
     >
-      LoginForm
+      <div className="space-y-4">
+        {/* Esto se reemplazará con el formulario real */}
+        <div className="text-sm text-gray-600 text-center font-medium">
+          LoginForm
+        </div>
+      </div>
     </CardWrapper>
   );
 };
