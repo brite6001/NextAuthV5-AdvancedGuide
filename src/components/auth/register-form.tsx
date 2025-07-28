@@ -1,14 +1,10 @@
 "use client";
 
+import * as z from "zod";
 import { useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { zodResolver } from "@hookform/resolvers/zod";
-import z from "zod";
-
 import { useForm } from "react-hook-form";
-import { LoginSchemaValues, LoginSchema } from "@/schemas/index";
-import { CardWrapper } from "./card-wrapper";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RegisterSchemaValues, RegisterSchema } from "@/schemas";
 import {
   Form,
   FormControl,
@@ -16,52 +12,35 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CardWrapper } from "./card-wrapper";
 import { FormError } from "./form-error";
 import { FormSucess } from "./form-sucess";
-import { login } from "@/actions";
+import { register } from "@/actions";
 
-export const LoginForm = () => {
+export const RegisterForm = () => {
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
-  const [showTwoFactor, setShowTwoFactor] = useState(false);
 
-  // useTransition marca ciertas actualizaciones de estado como "no urgentes" o transiciones.
-  // Esto mejora el rendimiento percibido de tu app al mantener la UI interactiva mientras React procesa cambios más pesados.
+  // No bloquea la UI mientras se procesa el envío del formulario.
+  // Permite que la UI siga siendo interactiva, mejorando la experiencia del usuario.
+  // Por ejemplo, si el envío del formulario toma tiempo, el usuario aún puede interactuar con otros elementos de la página.
+  // Esto es especialmente útil en aplicaciones donde las respuestas del servidor pueden tardar en llegar.
+  // En este caso, se usa para manejar el estado de envío del formulario de registro.
   const [isPending, startTransition] = useTransition();
 
-  const searchParams = useSearchParams();
-
-  // Cuando un usuario intenta acceder a una página protegida (por ejemplo, /dashboard), pero no ha iniciado sesión, se le redirige al login.
-  // Después de autenticarse, queremos llevarlo de vuelta a donde estaba — eso se hace con callbackUrl.
-  const callbackUrl = searchParams.get("callbackUrl");
-  const urlError =
-    searchParams.get("error") === "OAuthAccountNotLinked"
-      ? "Email already in use with different Provider!"
-      : "";
-
-  const form = useForm<LoginSchemaValues>({
-    resolver: zodResolver(LoginSchema),
+  const form = useForm<RegisterSchemaValues>({
+    resolver: zodResolver(RegisterSchema),
     defaultValues: {
       email: "",
       password: "",
-      code: "",
+      name: "",
     },
   });
 
-  const {
-    handleSubmit,
-    watch,
-    trigger,
-    control,
-    setValue,
-    setFocus,
-    formState: { isSubmitting },
-  } = form;
-
-  async function onSubmit(values: z.infer<typeof LoginSchema>) {
+  async function onSubmit(values: RegisterSchemaValues) {
     setError("");
     setSuccess("");
 
@@ -73,7 +52,7 @@ export const LoginForm = () => {
         }
       });
 
-      const data = await login(formData, callbackUrl);
+      const data = await register(formData);
 
       startTransition(() => {
         if (data?.error) {
@@ -85,10 +64,6 @@ export const LoginForm = () => {
           form.reset();
           setSuccess(data.success);
         }
-
-        if (data?.twoFactor) {
-          setShowTwoFactor(true);
-        }
       });
     } catch {
       setError("Something went wrong");
@@ -97,14 +72,33 @@ export const LoginForm = () => {
 
   return (
     <CardWrapper
-      headerLabel="Welcome back"
-      backButtonLabel="Don't have an account?"
-      backButtonHref="/auth/register"
+      headerLabel="Create an account"
+      backButtonLabel="Already have an account?"
+      backButtonHref="/auth/login"
       showSocial
     >
       <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">
+            {/* Name */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isPending}
+                      placeholder="John Doe"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Email */}
             <FormField
               control={form.control}
@@ -140,23 +134,15 @@ export const LoginForm = () => {
                       type="password"
                     />
                   </FormControl>
-                  <Button
-                    size="sm"
-                    variant="link"
-                    asChild
-                    className="px-0 font-normal"
-                  >
-                    <Link href="/auth/reset">Forgot password?</Link>
-                  </Button>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-          <FormError message={error || urlError} />
+          <FormError message={error} />
           <FormSucess message={success} />
-          <Button className="w-full" type="submit" disabled={isPending}>
-            Ingresar
+          <Button disabled={isPending} type="submit" className="w-full">
+            Crear una cuenta
           </Button>
         </form>
       </Form>
