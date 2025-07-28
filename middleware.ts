@@ -1,4 +1,6 @@
 import NextAuth from "next-auth";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import authConfig from "./auth.config";
 import {
   apiAuthPrefix,
@@ -10,54 +12,65 @@ import {
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
-  const { nextUrl } = req; // Obtiene la URL de la solicitud
-  const isLoggedIn = !!req.auth; // Verifica si el usuario está autenticado
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
 
-  // Detecta si la ruta es una API de autenticación (por ejemplo, /api/auth/*)
+  // Detecta si la ruta es una API de autenticación
   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-
-  // Detecta si la ruta es pública (p.ej. /, /about, /contact)
+  
+  // Detecta si la ruta es pública
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
-
-  // Detecta si la ruta es una página de login o registro
+  
+  // Detecta si la ruta es una página de autenticación
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-  // Si es una ruta de API de autenticación, no hacemos nada (permitir acceso)
-  if (isApiAuthRoute) return null;
-
-  // Si la ruta actual es una página de autenticación (por ejemplo: /login, /register)
-  if (isAuthRoute) {
-    // Y el usuario ya está autenticado...
-    if (isLoggedIn) {
-      // ...redirigilo al dashboard (o ruta protegida por defecto)
-      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-    }
-
-    // Si el usuario no está logueado, permitile acceder a la página de autenticación
-    return null;
+  // 1. Permitir todas las rutas de API de autenticación
+  if (isApiAuthRoute) {
+    return NextResponse.next();
   }
 
-  // Si el usuario NO está logueado y la ruta actual NO es pública
-  if (!isLoggedIn && !isPublicRoute) {
-    // Guardamos la URL original que intentaba visitar el usuario (para volver luego del login)
-    let callbackUrl = nextUrl.pathname;
+  // 2. Si está en página de auth y ya está logueado -> redirigir al dashboard
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
+    return NextResponse.next();
+  }
 
-    // Si hay parámetros en la URL (query string), los incluimos también
+  // 3. Si no está logueado y la ruta no es pública -> redirigir al login
+  if (!isLoggedIn && !isPublicRoute) {
+    // Construir callback URL completa
+    let callbackUrl = nextUrl.pathname;
     if (nextUrl.search) {
       callbackUrl += nextUrl.search;
     }
 
-    // Codificamos la URL de retorno para evitar errores en el query param
-    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+    // Crear URL de login con callback
+    const loginUrl = new URL("/auth/login", nextUrl);
+    loginUrl.searchParams.set("callbackUrl", callbackUrl);
 
-    // Redirigimos al login, incluyendo en el query param `callbackUrl` la página original
-    return Response.redirect(
-      new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
-    );
+    return NextResponse.redirect(loginUrl);
   }
+
+  // 4. En todos los otros casos, continuar
+  return NextResponse.next();
 });
 
-// Optionally, don't invoke Middleware on some paths
+// Configuración optimizada del matcher
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  // Excluir archivos estáticos, _next, y favicon
+  matcher: [
+    /*
+     * Coincide con todas las rutas de solicitud excepto las que comienzan con:
+     * - api (rutas API)
+     * - _next/static (archivos estáticos)
+     * - _next/image (optimización de imágenes)
+     * - favicon.ico (favicon)
+     * - archivos con extensión (imágenes, css, js, etc.)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).+)",
+    // Incluir rutas específicas que necesitan middleware
+    "/",
+    "/(api|trpc)(.*)"
+  ],
 };
