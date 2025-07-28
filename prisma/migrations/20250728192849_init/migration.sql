@@ -1,43 +1,5 @@
-/*
-  Warnings:
-
-  - You are about to drop the `Account` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `PasswordResetToken` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `TwoFactorConfirmation` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `TwoFactorToken` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `VerificationToken` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
 CREATE TYPE "user_roles" AS ENUM ('OWNER', 'ADMIN', 'VIEWER', 'USER');
-
--- DropForeignKey
-ALTER TABLE "Account" DROP CONSTRAINT "Account_userId_fkey";
-
--- DropForeignKey
-ALTER TABLE "TwoFactorConfirmation" DROP CONSTRAINT "TwoFactorConfirmation_userId_fkey";
-
--- DropTable
-DROP TABLE "Account";
-
--- DropTable
-DROP TABLE "PasswordResetToken";
-
--- DropTable
-DROP TABLE "TwoFactorConfirmation";
-
--- DropTable
-DROP TABLE "TwoFactorToken";
-
--- DropTable
-DROP TABLE "User";
-
--- DropTable
-DROP TABLE "VerificationToken";
-
--- DropEnum
-DROP TYPE "UserRole";
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -52,6 +14,7 @@ CREATE TABLE "users" (
     "two_factor_confirmation_id" UUID,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -72,6 +35,7 @@ CREATE TABLE "accounts" (
     "session_state" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
 );
@@ -141,6 +105,12 @@ CREATE INDEX "users_email_verified_idx" ON "users"("email_verified");
 CREATE INDEX "users_is_two_factor_enabled_idx" ON "users"("is_two_factor_enabled");
 
 -- CreateIndex
+CREATE INDEX "users_deleted_at_idx" ON "users"("deleted_at");
+
+-- CreateIndex
+CREATE INDEX "users_email_deleted_at_idx" ON "users"("email", "deleted_at");
+
+-- CreateIndex
 CREATE INDEX "accounts_user_id_idx" ON "accounts"("user_id");
 
 -- CreateIndex
@@ -148,6 +118,9 @@ CREATE INDEX "accounts_provider_idx" ON "accounts"("provider");
 
 -- CreateIndex
 CREATE INDEX "accounts_expires_at_idx" ON "accounts"("expires_at");
+
+-- CreateIndex
+CREATE INDEX "accounts_deleted_at_idx" ON "accounts"("deleted_at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "accounts_provider_provider_account_id_key" ON "accounts"("provider", "provider_account_id");

@@ -2,8 +2,8 @@
 
 import * as argon2 from "argon2";
 import { RegisterSchema } from "@/schemas";
-import prisma from "@/lib/prisma";
 import { getUserByEmail } from "@/data";
+import prisma from "@/lib/prisma";
 
 interface RegisterResponse {
   error?: string;
@@ -42,6 +42,11 @@ export const register = async (
 
     return { success: "Registro exitoso" };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Error al registrar el usuario" };
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al registrar el usuario",
+    };
   }
 };
