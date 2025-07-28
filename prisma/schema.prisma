@@ -18,28 +18,47 @@ enum UserRole {
   ADMIN
   VIEWER
   USER
+
+  @@map("user_roles")
 }
 
 model User {
   id                      String                 @id @default(uuid()) @db.Uuid
   name                    String?
   email                   String?                @unique
-  emailVerified           DateTime?
+  emailVerified           DateTime?              @map("email_verified")
   image                   String?
   password                String?
   role                    UserRole               @default(USER)
-  accounts                Account[]
-  isTwoFactorEnabled      Boolean                @default(false)
-  twoFactorConfirmation   TwoFactorConfirmation?
-  twoFactorConfirmationId String?                @db.Uuid
+  isTwoFactorEnabled      Boolean                @default(false) @map("is_two_factor_enabled")
+  twoFactorConfirmationId String?                @db.Uuid @map("two_factor_confirmation_id")
+  
+  // Relations
+  accounts              Account[]
+  twoFactorConfirmation TwoFactorConfirmation?
+  
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Indexes
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+  @@index([emailVerified])
+  @@index([isTwoFactorEnabled])
+  @@index([deletedAt])
+  @@index([email, deletedAt]) // Compound index for active users
+  @@map("users")
 }
 
 model Account {
   id                String  @id @default(uuid()) @db.Uuid
-  userId            String  @db.Uuid
+  userId            String  @db.Uuid @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String  @map("provider_account_id")
   refresh_token     String? @db.Text
   access_token      String? @db.Text
   expires_at        Int?
@@ -48,9 +67,21 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
+  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Constraints and Indexes
   @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([provider])
+  @@index([expires_at])
+  @@index([deletedAt])
+  @@map("accounts")
 }
 
 model VerificationToken {
@@ -59,7 +90,16 @@ model VerificationToken {
   token   String   @unique
   expires DateTime
 
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Constraints and Indexes
   @@unique([email, token])
+  @@index([email])
+  @@index([expires])
+  @@index([token])
+  @@map("verification_tokens")
 }
 
 model PasswordResetToken {
@@ -68,7 +108,16 @@ model PasswordResetToken {
   token   String   @unique
   expires DateTime
 
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Constraints and Indexes
   @@unique([email, token])
+  @@index([email])
+  @@index([expires])
+  @@index([token])
+  @@map("password_reset_tokens")
 }
 
 model TwoFactorToken {
@@ -77,13 +126,31 @@ model TwoFactorToken {
   token   String   @unique
   expires DateTime
 
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Constraints and Indexes
   @@unique([email, token])
+  @@index([email])
+  @@index([expires])
+  @@index([token])
+  @@map("two_factor_tokens")
 }
 
 model TwoFactorConfirmation {
   id     String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @db.Uuid @map("user_id")
 
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Constraints and Indexes
   @@unique([userId])
+  @@index([userId])
+  @@map("two_factor_confirmations")
 }

@@ -1,6 +1,9 @@
 "use server";
 
+import * as argon2 from "argon2";
 import { RegisterSchema } from "@/schemas";
+import prisma from "@/lib/prisma";
+import { getUserByEmail } from "@/data";
 
 interface RegisterResponse {
   error?: string;
@@ -18,10 +21,27 @@ export const register = async (
       return { error: "Invalid credentials" };
     }
 
-    const { email, password } = validatedFields.data;
+    const { email, password, name } = validatedFields.data;
+    const hashedPassword = await argon2.hash(password);
 
-    return {success: "Registro exitoso"};
+    const existingUser = await getUserByEmail(email);
+
+    if (existingUser) {
+      return { error: "El usuario ya existe" };
+    }
+
+    await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+      },
+    });
+
+    // TODO: Send verification token email
+
+    return { success: "Registro exitoso" };
   } catch (error) {
-    return { error: "Invalid credentials" };
+    return { error: error instanceof Error ? error.message : "Error al registrar el usuario" };
   }
 };
