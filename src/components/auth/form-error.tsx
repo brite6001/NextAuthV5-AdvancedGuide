@@ -1,10 +1,10 @@
 import { BsExclamation } from "react-icons/bs";
 
-interface FormErrorProps {
+interface Props {
   message?: string;
 }
 
-export const FormError = ({ message }: FormErrorProps) => {
+export const FormError = ({ message }: Props) => {
   if (!message) return null;
 
   return (

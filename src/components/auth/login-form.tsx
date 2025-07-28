@@ -25,12 +25,14 @@ import { useState } from "react";
 export const LoginForm = () => {
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+  
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
   const urlError =
     searchParams.get("error") === "OAuthAccountNotLinked"
       ? "Email already in use with different Provider!"
       : "";
+
   const form = useForm<LoginSchemaValues>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
