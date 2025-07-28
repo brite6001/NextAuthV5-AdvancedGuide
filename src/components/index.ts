@@ -3,6 +3,8 @@ export * from "./auth/login-form"
 export * from "./auth/card-wrapper";
 export * from "./auth/header";
 export * from "./auth/social";
+export * from "./auth/form-error";
+export * from "./auth/form-sucess";
 // export * from "./auth/back-button";
 // export * from "./auth/register-form";
 // export * from "./auth/forgot-password-form";
