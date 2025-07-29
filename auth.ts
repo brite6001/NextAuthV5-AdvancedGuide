@@ -19,7 +19,16 @@ export const {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-
+  // La función linkAccount dentro del objeto events se usa en el flujo de autenticación con NextAuth.js 
+  // y se ejecuta automáticamente cuando un usuario vincula una cuenta de autenticación externa (como Google, GitHub, etc.) a su perfil existente.
+  events: {
+    async linkAccount({ user }) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() },
+      });
+    },
+  },
   callbacks: {
     // Función que se ejecuta cuando un usuario intenta iniciar sesión
     // async signIn({ user }) {
