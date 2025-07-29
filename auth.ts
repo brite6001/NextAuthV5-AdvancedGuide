@@ -21,6 +21,17 @@ export const {
   },
 
   callbacks: {
+    // Función que se ejecuta cuando un usuario intenta iniciar sesión
+    // async signIn({ user }) {
+    //   if (!user?.id) return false;
+
+    //   const existingUser = await getUserById(user.id);
+
+    //   //  // Si el usuario no tiene el email verificado, no permitimos el inicio de
+    //   if (!existingUser || !existingUser.emailVerified) return false;
+    //   return true;
+    // },
+
     // Este callback se ejecuta cuando se crea o actualiza una sesión
     async session({ token, session }) {
       // Si existe token.sub (id del usuario) y session.user, se asigna el id
