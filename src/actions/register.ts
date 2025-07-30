@@ -4,6 +4,8 @@ import * as argon2 from "argon2";
 import { RegisterSchema } from "@/schemas";
 import { getUserByEmail } from "@/data";
 import prisma from "@/lib/prisma";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mail";
 
 interface RegisterResponse {
   error?: string;
@@ -38,9 +40,14 @@ export const register = async (
       },
     });
 
-    // TODO: Send verification token email
+    const verificationToken = await generateVerificationToken(email);
 
-    return { success: "Registro exitoso" };
+    await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token
+    );
+
+    return { success: "Email de confirmación enviado" };
   } catch (error) {
     return {
       error:

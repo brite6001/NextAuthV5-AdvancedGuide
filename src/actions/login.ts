@@ -6,6 +6,8 @@ import { LoginSchema } from "@/schemas";
 import { DEFAULT_LOGIN_REDIRECT } from "@root/routes";
 import { signIn } from "@root/auth";
 import { AuthError } from "next-auth";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mail";
 
 interface LoginResponse {
   error?: string;
@@ -25,11 +27,24 @@ export const login = async (
   }
 
   const { email, password } = validatedFields.data;
-  // const existingUser = await getUserByEmail(email);
+  const existingUser = await getUserByEmail(email);
 
-  // if (!existingUser || !existingUser.email || !existingUser.password) {
-  //   return { error: "Email no existe!" };
-  // }
+  if (!existingUser || !existingUser.email || !existingUser.password) {
+    return { error: "Email no existe!" };
+  }
+
+  if (!existingUser.emailVerified) {
+    const verificationToken = await generateVerificationToken(
+      existingUser.email
+    );
+
+    await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token
+    );
+
+    return { success: "Email de confirmación enviado!" };
+  }
 
   // const passwordMatch = await argon2.verify(existingUser.password, password);
 
@@ -44,12 +59,12 @@ export const login = async (
       redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
     });
 
-    return { success: "Login Sucess!" };
+    return { success: "Login exitoso!" };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return { error: "Invalid credentials!" };
+          return { error: "Credenciales invalidas!" };
         default:
           return { error: "Something went wrong!" };
       }

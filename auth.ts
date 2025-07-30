@@ -19,7 +19,7 @@ export const {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-  // La función linkAccount dentro del objeto events se usa en el flujo de autenticación con NextAuth.js 
+  // La función linkAccount dentro del objeto events se usa en el flujo de autenticación con NextAuth.js
   // y se ejecuta automáticamente cuando un usuario vincula una cuenta de autenticación externa (como Google, GitHub, etc.) a su perfil existente.
   events: {
     async linkAccount({ user }) {
@@ -31,16 +31,38 @@ export const {
   },
   callbacks: {
     // Función que se ejecuta cuando un usuario intenta iniciar sesión
-    // async signIn({ user }) {
-    //   if (!user?.id) return false;
+    async signIn({ user, account }) {
+      // Si el proveedor de autenticación NO es "credentials" (es decir, si es OAuth como Google, GitHub, etc.)
+      // entonces permitimos el inicio de sesión sin verificar el email.
+      if (account?.provider !== "credentials") return true;
 
-    //   const existingUser = await getUserById(user.id);
+      // Si es un login con usuario/contraseña ("credentials"), obtenemos al usuario desde la base de datos usando su ID
+      if (!user.id) return false;
+      const existingUser = await getUserById(user.id);
 
-    //   //  // Si el usuario no tiene el email verificado, no permitimos el inicio de
-    //   if (!existingUser || !existingUser.emailVerified) return false;
-    //   return true;
-    // },
+      // Si el usuario no tiene el email verificado, no permitimos el inicio de sesión
+      if (!existingUser?.emailVerified) return false;
 
+      // Si el usuario tiene habilitada la autenticación en dos pasos (2FA)
+      // if (existingUser.isTwoFactorEnabled) {
+      //   // Buscamos si existe una confirmación previa del segundo factor (por ejemplo, un código 2FA validado)
+      //   const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(
+      //     existingUser.id
+      //   );
+
+      //   // Si no hay confirmación del segundo factor, no permitimos el inicio de sesión
+      //   if (!twoFactorConfirmation) return false;
+
+      //   // Si hay confirmación, la eliminamos para que no pueda reutilizarse en otro intento de inicio de sesión
+      //   await prisma.twoFactorConfirmation.delete({
+      //     where: { id: twoFactorConfirmation.id },
+      //   });
+      // }
+
+      // Si todo está bien (email verificado y 2FA confirmado si aplica), permitimos el inicio de sesión
+      return true;
+    },
+    
     // Este callback se ejecuta cuando se crea o actualiza una sesión
     async session({ token, session }) {
       // Si existe token.sub (id del usuario) y session.user, se asigna el id
