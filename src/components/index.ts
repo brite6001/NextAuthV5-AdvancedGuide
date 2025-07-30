@@ -8,3 +8,5 @@ export * from "./auth/form-error";
 export * from "./auth/form-sucess";
 export * from "./auth/error-card";
 export * from "./auth/new-verification-form";
+export * from "./auth/reset-form"
+export * from "./auth/new-password-form"
